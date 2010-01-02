@@ -11,9 +11,11 @@
   <title>Cleanly Migrate Your Subversion Repository To a GIT Repository</title>
 </head>
 
-<body id="post">
+<body id="posts">
 <a href="http://github.com/maddox"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub" /></a>
 <div id="content">
+  <h1 class="name">Jon Maddox</h1>
+  <h2><a href="/">Home</a></h2>
   <h1>Cleanly Migrate Your Subversion Repository To a <span class="caps">GIT</span> Repository</h1>
 <p>So you&#8217;re ready to ride the <span class="caps">GIT</span> train eh? But what about all those projects in your subversion repository? Sure you could just use <code>git-svn</code> but what you really want is to cleanly move that repository and all its history to a nice new <span class="caps">GIT</span> repository.</p>
 <p>Luckily it&#8217;s not that hard. For this example I&#8217;m going to use <strong>my_blog</strong> as the application name you&#8217;re porting to a <span class="caps">GIT</span> repository. We&#8217;re basically going to just initialize a new <span class="caps">GIT</span> repository, point it at your <span class="caps">SVN</span> repository, and suck in your code and history while remapping the users to <span class="caps">GIT</span> users. We&#8217;ll then just clone <span class="caps">THAT</span> repository to have a clean <span class="caps">GIT</span> repository free of <span class="caps">SVN</span> clutter.</p>
