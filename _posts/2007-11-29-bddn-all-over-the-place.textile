@@ -1,0 +1,67 @@
+---
+layout: post
+title: BDD’n All Over The Place
+---
+
+h1. {{ page.title }}
+
+I've been working on quite a range of different projects recently, not all of which are Ruby/Rails. 
+
+One is in PHP and one is a cross platform widget that will work for the Yahoo Widgets engine as well as OS X's Dashboard.
+
+Of these two projects I've managed to work some BDD into both of them. I thought I'd spread the word on the packages I'm using. For javascript I'm using "JSSpec":http://code.google.com/p/jsspec/ and for PHP I'm using "PHPSpec":http://dev.phpspec.org/manual/
+
+Neither are documented very much, and both are less than 6 months old. They're limited, but I've been able to get what I need out of them and its been nice to be able to keep the same dev style even if I have to deal with JS and PHP.
+
+Here's a couple pieces of syntax.
+
+h3. PHPSpec
+
+{% highlight php %}
+<?php
+
+class DescribePage extends PHPSpec_Context{
+	
+  public function before(){
+    $this->p = new Page();
+  }
+
+  public function itShouldReturnAShortUrl(){
+    $this->p->url = "http://www.apple.com/imac/features.html";
+    $this->spec($this->p->short_url())->should->be('www.apple.com');
+  }
+
+ public function itShouldNotBelongToAQueryWhenCreated(){
+   $this->spec($this->p->query)->should->beNull();
+  }
+
+}
+
+?>
+{% endhighlight %}
+
+h3. JSSpec
+
+{% highlight javascript %}
+describe('Get Song From XML', {
+  before_each : function() {
+    podcast = new Podcast()
+    podcast.xmlUrl = 'podcast_xml_fixture.xml';
+  },
+    'should parse song title from xml': function() {
+      topTune.readFeed();
+      song = podcast.parseTune();
+      expect(song[0]['title'].strip()).should_be("Willoughby - Frankenstein");
+  },
+      'should parse song url from xml': function() {
+        podcast.readFeed();
+        song = podcast.parseSong();
+        expect(song[0]['link'].strip()).should_be("http://www.domain.com/featured/willoughby_-_franken");
+  },
+      'should create song': function() {
+        podcast.getSong();
+        expect(podcast.song).should_not_be(null);
+    }
+})
+{% endhighlight %}
+

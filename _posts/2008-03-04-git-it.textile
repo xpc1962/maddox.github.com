@@ -1,0 +1,37 @@
+---
+layout: post
+title: Git It?
+---
+
+h1. {{ page.title }}
+
+While working today I think I heard GIT mentioned on every form of communication I use daily. It was mentioned in several IRC channels, on twitter a ton, in an email, over IM, and a couple of new posts in my feeds. It has become obvious that GIT has hit the early adopter phase.
+
+I'm not going to _sell_ GIT or even try to explain why it's so great. There are tons of places online that already do that. I'm just going to share a couple stories.
+
+h4. Who Gives a Crap, I Gotta Get Work Done
+
+This new source code management software that seems to be gaining a HUGE amount of steam first popped on my radar early last summer. I contemplated playing with it, but like most things, I skipped it. I figured as a single developer, it wouldn't mean much to me. I code,commit, iterate. _"What do i need with fancy branching?"_ I "said":http://twitter.com/maddox/statuses/170044712. But "@peterc":http://twitter.com/peterc "replied":http://twitter.com/peterc/statuses/170110182 with my answer. I just didn't get it then.
+
+Months went by as I used SVN like everyone else. I was just happy with versioned code, that's about all that SVN did for me. 
+
+h4. RubyConf 2007
+
+As I was outside with the rest of the Ruby Smoking Crew, I got Chris Wanstrath, unofficial GIT ambassador, to try to sell me on it. He started with the normal branching pitch, and I stoppped him. 
+
+bq. _"I don't branch"_. 
+
+bq. _"Because you don't use GIT"_. 
+
+BOOM. It hit me. I don't *branch* because branching with SVN *sucks* so much fucking arse that it's just not worth it. CERTAINLY not for changes that take only a few hours. With SVN you hang out on trunk and make your thousands of commits. Forget if you want to try something wacky real fast, you'd have to branch it! And thats just a whole lot of work.
+
+h4. Fast Forward a Few Days.
+
+I'm sitting in a cube at Yahoo!. I'd been given a task a few days earlier. I was working on it and hit a stopping point. I needed to make a huge sweeping change. BUT, two hours later, I had to demo it to a room full of Yahoo! people I had never even met. AND they expected it to work. I knew my changes were going to break the whole app for a little while.
+
+Ok, so first off, this project was neither IN a repository, nor did I even have access to one. I'd only been there for like two days. So I could copy my source directory and file it away for the demo, or... I could finally throw GIT on my laptop and try it out! So I installed GIT, initialized my rep. Branched it...whoa what? Thats it. <code>git checkout -b new_model</code>? Thats it?! SICK.
+
+I continued my work and when it came time for the demo I just used <code>git checkout master</code> and voila, I was back to my fully working copy. I finally 'got' GIT. At least the branching part. Not only is it easy to branch, you can branch locally. And by locally, I mean privately. So if you want to try something weird and crazy out, you don't need to worry about making a new branch at the central repository, just branch it locally and go to town. If it worked out, merge it back into _master_. If it doesn't, just dump it. Now, like most GIT users, I don't even work directly on master.
+
+Ok, thats my story. I guess the moral is, you're never going to get why something is good for YOU until YOU use it. Everyone takes different things away from products, especially when you're talking about productivity.
+

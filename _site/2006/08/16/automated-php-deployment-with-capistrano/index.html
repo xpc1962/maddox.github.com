@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="keywords" content="jon maddox richmond programmer ruby cocoa va" />
+  <meta name="description" content="Here lies Jon Maddox" />
+  <link rel="stylesheet" href="/stylesheets/styles.css" type="text/css"> 
+  <link rel="stylesheet" href="/stylesheets/syntax.css" type="text/css"> 
+  <title>Automated PHP Deployment With Capistrano</title>
+</head>
+
+<body id="post">
+<a href="http://github.com/maddox"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub" /></a>
+<div id="content">
+  <h1>Automated <span class="caps">PHP</span> Deployment With Capistrano</h1>
+<p>Sure, I&#8217;d like to spend my days and nights writing Ruby and <em>cap deploy</em> ing it to success, but I have to face the facts.</p>
+<h2>I Still Have <span class="caps">PHP</span> Apps To Maintain.</h2>
+<p>I have no one to blame but myself. I wrote them. And I still work where they were written. There&#8217;s no escape. After using <a href="http://manuals.rubyonrails.com/read/book/17">Capistrano</a> more than one time, you&#8217;ll be completely spoiled.</p>
+<p>But Capistrano is only for crazy Rails apps right? Nope. Its simply a platform for automation. It just so happens that deployment usually requires quite a bit of steps. Hmmm&#8230;lots of steps&#8230;automation&#8230; a match made in heaven. So sure, Capistrano was thought up with Rails in mind, but created openly so you&#8217;re able to use it any way you&#8217;d like.</p>
+<p>Capistrano&#8217;s power is in its remoting features. You tell it what to do on that <em>other server</em>, and it does it. Beauty. So, if your <span class="caps">PHP</span> deployment process requires an <em>svn export</em> combined with a few other repetitive steps you have to do <strong><em>every</em></strong> time, Capistrano is here to help you too.</p>
+<p>Without going into all the details of <a href="http://manuals.rubyonrails.com/read/book/17">Capistrano</a> (following the link will give you a nice overview), it uses a deploy script (recipe) to understand your deployment environment and required tasks.</p>
+<h3>Ok ok ok, Lets Get On With It</h3>
+<p>So, we have a <span class="caps">PHP</span> app that we need to deploy to server X. It needs to be sucked out of its repository, its version symlinked to a doc_root, and then a shared directory symlinked into the site. This is a pretty common deployment scenario, so lets go with this.</p>
+<p>First, we need a Capistrano recipe. Currently, it can only be auto generated for a Rails app, so psst, <a href="http://simplisticcomplexity.com/images/deploy.rb">here it is</a>. Download this and create a directory at the root of your <span class="caps">PHP</span> app and name it <em>config</em>.</p>
+<div class="highlight"><pre>mkdir config
+<span class="nb">cd </span>config
+wget http://simplisticcomplexity.com/images/deploy.rb
+</pre>
+</div><p>Capistrano wants its recipe to be in the <em>config</em> directory, so do as it likes. Now lets open it up and make it work with us. Once again, a complete description of the Capistrano recipe file is bit out of scope for this little post, so please <a href="http://manuals.rubyonrails.com/read/book/17">read up</a>.</p>
+<p>We&#8217;ll edit all the normal items</p>
+<div class="highlight"><pre><span class="n">set</span> <span class="ss">:application</span><span class="p">,</span> <span class="s2">&quot;php_app&quot;</span>
+<span class="n">set</span> <span class="ss">:repository</span><span class="p">,</span> <span class="s2">&quot;http://code.phpdevelopers.com/</span><span class="si">#{</span><span class="n">application</span><span class="si">}</span><span class="s2">/trunk&quot;</span>
+</pre>
+</div><p>We only deploy to one server, so edit&#8230;</p>
+<div class="highlight"><pre><span class="n">role</span> <span class="ss">:web</span><span class="p">,</span> <span class="s2">&quot;phpsite.com&quot;</span>
+</pre>
+</div><p>Now you need to add the directory you want to deploy to. Add&#8230;</p>
+<div class="highlight"><pre><span class="n">set</span> <span class="ss">:deploy_to</span><span class="p">,</span> <span class="s2">&quot;/home/www/</span><span class="si">#{</span><span class="n">application</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre>
+</div><p>Capistrano defaults to <em>checkout</em> when pulling from subversion. I prefer an export, if you do too, then add&#8230;</p>
+<div class="highlight"><pre><span class="n">set</span> <span class="ss">:checkout</span><span class="p">,</span> <span class="s2">&quot;export&quot;</span>
+</pre>
+</div><p>Ok, so if you&#8217;re familiar with Capistrano, you know exactly what we did. If you&#8217;re not, the most important thing to know is that Capistrano is going to suck your code from the repository defined, do everything it&#8217;s told to do in <em>/home/www/php_app</em> on your deployment server, phpsite.com.</p>
+<h3>Set&#8217;r Up</h3>
+<p>Believe it or not, we&#8217;re half way done. Next, lets let Capistrano get the directory we just defined ready for its magic.</p>
+<div class="highlight"><pre>cap setup
+</pre>
+</div><p>If you look on your deployment server, you should see 2 directories that were just created.</p>
+<div class="highlight"><pre>drwxrwxr-x    2 user  group      4096 Aug 16 01:48 releases
+drwxr-sr-x    4 user  group      4096 Aug 16 01:48 shared
+</pre>
+</div><p><span class="caps">WOW</span>! We&#8217;re already saving time! <em>releases</em> is where your app will be sucked down to. Capistrano exports your <span class="caps">PHP</span> app into a directory named after the current date/time. Each version you deploy will be kept in this directory. Shared is where you can keep files like uploaded assets or images that aren&#8217;t kept in your repository, but need to be around every time you export from subversion. If your users upload files all day long, and you redeploy your <span class="caps">PHP</span> app from subversion, all your uploaded files will be gone. So we keep those in here.</p>
+<p>Here&#8217;s the deployment rub. Every time you deploy, you have to go symlink these directories from your /shared directory, into your current version of your <span class="caps">PHP</span> app. And a small bit of math can calculate the complexity when you start adding 2,3, or 6 asset folders. Yuck.</p>
+<p>That&#8217;s where Capistrano helps ya out.</p>
+<h3>Capistrano, Take Me Away</h3>
+<p>Ok, so our deploy directory is set up and ready to get our files. Now we need to tell Capistrano exactly what to do when we deploy. Get it? Recipe&#8230;</p>
+<p>Define a new task called <em>deploy</em></p>
+<div class="highlight"><pre><span class="n">desc</span> <span class="s2">&quot;This will deploy the app&quot;</span>
+<span class="n">task</span> <span class="ss">:deploy</span> <span class="k">do</span>
+
+<span class="k">end</span>
+</pre>
+</div><p>Inside the block we&#8217;ll just tell Capistrano exactly what it needs to do in order to deploy our app.</p>
+<div class="highlight"><pre><span class="n">desc</span> <span class="s2">&quot;This will deploy the app&quot;</span>
+<span class="n">task</span> <span class="ss">:deploy</span> <span class="k">do</span>
+  <span class="n">run</span> <span class="s2">&quot;svn --quiet </span><span class="si">#{</span><span class="n">checkout</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">repository</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">release_path</span><span class="si">}</span><span class="s2">&quot;</span>
+  <span class="n">run</span> <span class="s2">&quot;ln -nfs </span><span class="si">#{</span><span class="n">release_path</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">current_path</span><span class="si">}</span><span class="s2">&quot;</span>
+  <span class="n">run</span> <span class="s2">&quot;ln -nfs </span><span class="si">#{</span><span class="n">shared_path</span><span class="si">}</span><span class="s2">/photos </span><span class="si">#{</span><span class="n">current_path</span><span class="si">}</span><span class="s2">/photos&quot;</span>
+<span class="k">end</span>
+</pre>
+</div><p>Ok, lets walk through exactly what this does. First, Capistrano uses subversion to suck your app out of the repository and into the <em>releases</em> directory. That <em>releases_path</em> is just a nice convenient variable for <em>/home/www/php_site/releases/200608162012</em>. Next, it will create a <em>current</em> symlink to that version of your app in the <em>releases</em> directory. Then we told it to symlink the directory <em>photos</em> from <em>shared</em> into the current version of the application.</p>
+<p>And since you&#8217;re hosting a <span class="caps">PHP</span> app with Apache (a 99% guess), there&#8217;s no need to restart any servers. You&#8217;re done. You&#8217;re new version will be deployed safely and linked. The <strong><span class="caps">IMPORTANT</span></strong> thing to note, is that your new <em>doc_root</em> for your site will be <em>/home/www/php_app/current</em>.</p>
+<h3>Deploy!</h3>
+<p>Now, all ya gotta do to redeploy your site is&#8230;</p>
+<div class="highlight"><pre>cap deploy
+</pre>
+</div><p>Capistrano will go on to do everything you told it to do, on your deployment server. When its done, your directory should look like this&#8230;</p>
+<div class="highlight"><pre>lrwxrwxrwx   1 user group   42 2006-08-16 01:32 current -&gt; /home/www/php_site_/releases/200608162012
+drwxrwxr-x   4 user group 4096 2006-08-16 01:31 releases
+drwxr-xr-x   4 user group 4096 2006-06-24 02:08 shared
+</pre>
+</div><p>And there you have it. Automated <span class="caps">PHP</span> deployment, with one simple command. Peering inside the current directory, you&#8217;ll see where the photos directory has been symlinked into it.</p>
+<p>The moral is, Capistrano isn&#8217;t just for Rails deployment. Its powerful remote execution can be exploited to do anything you want. While our Rails apps get a lot for free when it comes to recipes, creating your own isn&#8217;t complicated. Especially if its replacing repetitive tasks you&#8217;ve done over and over and over and over and over again.</p>
+<p>You&#8217;ll see the payoff the minute you get this set up. Especially on a Friday night at 5:30p when you&#8217;re walking out the door. And its not just for Rails!</p>
+  <div id="footer">
+    <a href="/">&laquo; Return Home</a>
+  </div>
+</div>
+</body>
+</html>

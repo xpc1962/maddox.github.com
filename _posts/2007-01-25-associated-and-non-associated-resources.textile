@@ -1,0 +1,111 @@
+---
+layout: post
+title: Associated and Non Associated Resources
+---
+
+h1. {{ page.title }}
+
+*Problem:* Your site has resources that can exist alone as well as be associated to another resource. You want to stay DRY as well as keep your routing RESTful.
+
+I just came across this problem while working on a project, and its solution is a bit easier than you'd think. Thanks to Ruby being so dynamic, Rails provides a really easy way to accomplish this. I'll give my use case as an example.
+
+So I've got a website I'm working on. It's for a church. Part of the data model will include Events and Groups. Groups will _have_many_ Events. Simple enough. Here's the wrench, Events can exist on their own as well. So the "Church" can have Events, which would be an Event existing alone without an association to anything, and every Group in the church will _have_many_ Events.
+
+We also want to use RESTful routes so that we can have routes like: /events, /events/1, /groups/1/events, /groups/4/events/32
+
+Ok, so lets get jammin' on the solution.
+
+Lets knock out the data model first. We want to keep this DRY, so we'll use Single Table Inheritance to keep track of the Events. We'll have Events and GroupEvents. GroupEvents will inherit from the parent Events:
+
+{% highlight ruby %}
+Class GroupEvent < Event
+{% endhighlight %}
+
+This way Events.find(:all) will return regular Events as well as GroupEvents. We'll add one extra attribute for GroupEvent, group_id, this allows a GroupEvent to _belong_to_ a Group. Lets make our migrations:
+
+h2. Data Tables
+
+{% highlight ruby %}
+class CreateGroups < ActiveRecord::Migration
+  def self.up
+    create_table :groups do |t|
+      t.column :name, :string
+      t.column :description, :text
+    end
+  end
+
+  def self.down
+    drop_table :groups
+  end
+end
+
+
+class CreateEvents < ActiveRecord::Migration
+  def self.up
+    create_table :events do |t|
+      t.column :type, :string
+      t.column :title, :string
+      t.column :description, :text
+      t.column :date_on_, :datetime
+
+      # extra attribute for GroupEvent
+      t.column :group_id, :integer
+    end
+  end
+
+  def self.down
+    drop_table :events
+  end
+end
+{% endhighlight %}
+
+
+If you're unfamiliar with STI, the type column is there to keep track of what type of object the row is. We also added the group_id attribute for the GroupEvent.
+
+Ok, so our DB is set up. Lets get our association on... Start by creating a new model named GroupEvent:
+
+h2. Data Model
+
+{% highlight ruby %}
+class GroupEvent < Event
+  belongs_to :group
+end
+{% endhighlight %}
+
+GroupEvent inherits from Event. Since Event inherits from ActiveRecord::Base, our GroupEvent class is still an ActiveRecord. Its just extended a bit. We also added a _belongs_to_ association to Group. So Group will _have_many_ GroupEvents, not Events. Next up, the Group model...
+
+{% highlight ruby %}
+class Group < ActiveRecord::Base
+  has_many :events, :class_name => 'GroupEvent', :foreign_key => 'group_id'
+end
+{% endhighlight %}
+
+Here's where we're pulling a few Rails tricks. We're using telling Group that it has many events, but GroupEvents, using group_id as a foreign key (remember when we added that?!). So now we're able to use:
+
+{% highlight ruby %}
+@group = Group.find(1)
+@events = @group.events
+{% endhighlight %}
+
+
+Whoa, nice! We didn't have to have a separate table just for GroupEvents, which means we dont have to manage 2 different models and their attributes if they get updated. We also don't have to use syntax like _@group.group_events_ which is a bit ugly if you ask me. Groups have events, lets obfuscate HOW it has them to the back, so in the implementation we're just worried about events, not namespaced events, blegh.
+
+OK! NICE! So far so good. What about the routes? I want http://mychurch.com/events and http://mychurch.com/groups/2/events, not http://mychurch.com/groups/3/group_events.
+
+Lets dig into the routing...
+
+{% highlight ruby %}
+map.resources :events
+
+map.resources :groups do |group|
+  group.resources :events, :controller => 'group_events', :name_prefix => 'group_'
+end
+{% endhighlight %}
+
+First things first, we add a resource for Event. Next, since we want nice pretty nested routing, we nest GroupEvent into Group. Here's some more configuration (EEP! yes yes, our requirements are outside of a convention, BUT NOT BY MUCH!). We want to define the route to use 'events' in the actual URI, but we don't want to stomp all over our previously declared resource, events. Our generated named routes will clash, we can't have 2 events_path methods. So we add a :name_prefix option. This basically appends 'group_' to every little route helper we have. So event_path in the Group context becomes, group_event_path. The tricky one is new_event_path turns to group_new_event_path, so its not AS pretty, but good enough :)
+
+Next we know our @group.events are going to be very different from our @events, so we need a GroupEventController. In order to properly map this, we use the :controller option. Without it, the routing will use EventController (those darn conventions...), and that would just process our logic for normal Events, not our scoped Group events.
+
+So there ya have it. Around 10 lines of code and we have our domain model nice and dry, and our routes very logical!
+
+

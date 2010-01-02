@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="keywords" content="jon maddox richmond programmer ruby cocoa va" />
+  <meta name="description" content="Here lies Jon Maddox" />
+  <link rel="stylesheet" href="/stylesheets/styles.css" type="text/css"> 
+  <link rel="stylesheet" href="/stylesheets/syntax.css" type="text/css"> 
+  <title>BDD’n All Over The Place</title>
+</head>
+
+<body id="post">
+<a href="http://github.com/maddox"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub" /></a>
+<div id="content">
+  <h1>BDD’n All Over The Place</h1>
+<p>I&#8217;ve been working on quite a range of different projects recently, not all of which are Ruby/Rails.</p>
+<p>One is in <span class="caps">PHP</span> and one is a cross platform widget that will work for the Yahoo Widgets engine as well as OS X&#8217;s Dashboard.</p>
+<p>Of these two projects I&#8217;ve managed to work some <span class="caps">BDD</span> into both of them. I thought I&#8217;d spread the word on the packages I&#8217;m using. For javascript I&#8217;m using <a href="http://code.google.com/p/jsspec/">JSSpec</a> and for <span class="caps">PHP</span> I&#8217;m using <a href="http://dev.phpspec.org/manual/">PHPSpec</a></p>
+<p>Neither are documented very much, and both are less than 6 months old. They&#8217;re limited, but I&#8217;ve been able to get what I need out of them and its been nice to be able to keep the same dev style even if I have to deal with JS and <span class="caps">PHP</span>.</p>
+<p>Here&#8217;s a couple pieces of syntax.</p>
+<h3>PHPSpec</h3>
+<div class="highlight"><pre><span class="cp">&lt;?php</span>
+
+<span class="k">class</span> <span class="nc">DescribePage</span> <span class="k">extends</span> <span class="nx">PHPSpec_Context</span><span class="p">{</span>
+	
+  <span class="k">public</span> <span class="k">function</span> <span class="nf">before</span><span class="p">(){</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">p</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Page</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="k">public</span> <span class="k">function</span> <span class="nf">itShouldReturnAShortUrl</span><span class="p">(){</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">p</span><span class="o">-&gt;</span><span class="na">url</span> <span class="o">=</span> <span class="s2">&quot;http://www.apple.com/imac/features.html&quot;</span><span class="p">;</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">spec</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">p</span><span class="o">-&gt;</span><span class="na">short_url</span><span class="p">())</span><span class="o">-&gt;</span><span class="na">should</span><span class="o">-&gt;</span><span class="na">be</span><span class="p">(</span><span class="s1">&#39;www.apple.com&#39;</span><span class="p">);</span>
+  <span class="p">}</span>
+
+ <span class="k">public</span> <span class="k">function</span> <span class="nf">itShouldNotBelongToAQueryWhenCreated</span><span class="p">(){</span>
+   <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">spec</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">p</span><span class="o">-&gt;</span><span class="na">query</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">should</span><span class="o">-&gt;</span><span class="na">beNull</span><span class="p">();</span>
+  <span class="p">}</span>
+
+<span class="p">}</span>
+
+<span class="cp">?&gt;</span><span class="x"></span>
+</pre>
+</div><h3>JSSpec</h3>
+<div class="highlight"><pre><span class="nx">describe</span><span class="p">(</span><span class="s1">&#39;Get Song From XML&#39;</span><span class="o">,</span> <span class="p">{</span>
+  <span class="nx">before_each</span> <span class="o">:</span> <span class="k">function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">podcast</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Podcast</span><span class="p">()</span>
+    <span class="nx">podcast</span><span class="p">.</span><span class="nx">xmlUrl</span> <span class="o">=</span> <span class="s1">&#39;podcast_xml_fixture.xml&#39;</span><span class="o">;</span>
+  <span class="p">}</span><span class="o">,</span>
+    <span class="s1">&#39;should parse song title from xml&#39;</span><span class="o">:</span> <span class="k">function</span><span class="p">()</span> <span class="p">{</span>
+      <span class="nx">topTune</span><span class="p">.</span><span class="nx">readFeed</span><span class="p">();</span>
+      <span class="nx">song</span> <span class="o">=</span> <span class="nx">podcast</span><span class="p">.</span><span class="nx">parseTune</span><span class="p">();</span>
+      <span class="nx">expect</span><span class="p">(</span><span class="nx">song</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;title&#39;</span><span class="p">].</span><span class="nx">strip</span><span class="p">()).</span><span class="nx">should_be</span><span class="p">(</span><span class="s2">&quot;Willoughby - Frankenstein&quot;</span><span class="p">);</span>
+  <span class="p">}</span><span class="o">,</span>
+      <span class="s1">&#39;should parse song url from xml&#39;</span><span class="o">:</span> <span class="k">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nx">podcast</span><span class="p">.</span><span class="nx">readFeed</span><span class="p">();</span>
+        <span class="nx">song</span> <span class="o">=</span> <span class="nx">podcast</span><span class="p">.</span><span class="nx">parseSong</span><span class="p">();</span>
+        <span class="nx">expect</span><span class="p">(</span><span class="nx">song</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;link&#39;</span><span class="p">].</span><span class="nx">strip</span><span class="p">()).</span><span class="nx">should_be</span><span class="p">(</span><span class="s2">&quot;http://www.domain.com/featured/willoughby_-_franken&quot;</span><span class="p">);</span>
+  <span class="p">}</span><span class="o">,</span>
+      <span class="s1">&#39;should create song&#39;</span><span class="o">:</span> <span class="k">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nx">podcast</span><span class="p">.</span><span class="nx">getSong</span><span class="p">();</span>
+        <span class="nx">expect</span><span class="p">(</span><span class="nx">podcast</span><span class="p">.</span><span class="nx">song</span><span class="p">).</span><span class="nx">should_not_be</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">})</span>
+</pre>
+</div>
+  <div id="footer">
+    <a href="/">&laquo; Return Home</a>
+  </div>
+</div>
+</body>
+</html>

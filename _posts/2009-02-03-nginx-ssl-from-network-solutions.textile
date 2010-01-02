@@ -1,0 +1,30 @@
+---
+layout: post
+title: Nginx + SSL from Network Solutions
+---
+
+h1. {{ page.title }}
+
+These days you need an intermediate cert when using an SSL. Last time I set up a cert from Network Solutions, this intermediate cert was clearly named. This time around they issued quite a few certs and it made it confusing.
+
+* AddTrustExternalCARoot.crt
+* MY.DOMAIN.COM.crt
+* NetworkSolutions_CA.crt
+* UTNAddTrustServer_CA.crt
+
+
+The two certs we care about here are *MY.DOMAIN.COM.crt*, my site's ssl cert, and NetworkSolutions_CA.crt, Network Solution's intermediate key.
+
+Ok, now the tricky part. With old Apache, there was a specific directive for defining the intermediate cert. Nginx participates in no such thing. With Nginx we just need to cat our two certs together.
+
+ 
+{% highlight bash%}
+cat MY.DOMAIN.COM.crt NetworkSolutions_CA.crt > combined.crt
+{% endhighlight %}
+
+Now just add this to your conf with:
+
+{% highlight bash %}
+ssl_certificate /usr/local/nginx/certs/combined.crt;
+{% endhighlight %}
+

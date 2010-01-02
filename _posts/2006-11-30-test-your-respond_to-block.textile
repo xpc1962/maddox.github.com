@@ -1,0 +1,34 @@
+---
+layout: post
+title: Test Your respond_to Block
+---
+
+h1. {{ page.title }}
+
+Getting RESTful and wondering how to test your _respond_to_ block in your controller to make sure its returning the right format? Drop these into your _test_helper.rb_.
+
+{% highlight ruby %}
+def assert_xml
+  assert_match 'application/xml', @response.headers['Content-Type']
+end
+
+def assert_rss
+  assert_match 'application/rss+xml', @response.headers['Content-Type']
+end
+{% endhighlight %}
+
+Then in your functional tests, use them like this:
+
+{% highlight ruby %}
+def test_return_xml
+  get :index, :format => 'xml'
+  assert_xml
+end
+
+def test_return_rss
+  get :index, :format => 'rss'
+  assert_rss
+end
+{% endhighlight %}
+
+Yay!

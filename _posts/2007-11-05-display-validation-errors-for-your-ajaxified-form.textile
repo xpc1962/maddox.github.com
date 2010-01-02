@@ -1,0 +1,78 @@
+---
+layout: post
+title: Display Validation Errors For Your Ajaxified Form
+---
+
+h1. {{ page.title }}
+
+One of the sweet things Rails provides is practically free error notification on forms. With just a little bit of
+
+{% highlight ruby %}
+<%= error_messages_for :post %>
+{% endhighlight %}
+
+validations on your model, and some logic in your controller, bam, instant error messaging. Very simple.
+
+But what if your form is using AJAX to post? The page doesn't re-render, so how is our buddy, <code>error_messages_for</code>, going to work? Well its not, we're gonna have to use AJAX to display the errors. It turns out this isn't too touch, but as usual we want to keep it DRY.
+
+h3. The Controller
+
+{% highlight ruby %}
+class PostsController < ApplicationController
+  def create
+    @post = Post.new(params[:post])
+    @post.save!
+    
+    # automatically renders create.rjs.erb
+  
+  rescue ActiveRecord::RecordInvalid
+
+    @model = @kit_item
+    render :template => 'shared/validation_error.rjs.erb'
+  
+  end
+end
+{% endhighlight %}
+
+
+We will attempt to create the Post. If all goes well, then the _create_ rjs action will fire and all is well. But if the record fails validation, we catch it, assign the current model to <code>@model</code>, and render _shared/validaiton_error.rjs.erb_. This is our generic AJAX action for rendering errors for Models. 
+
+h3. The AJAX
+
+Create _shared/validation_error.rjs_ and use this little snippit, and thats pretty much it for this part.
+
+{% highlight ruby %}
+page.replace_html "errors_for_#{@model.class.name.underscore}", "Oops! <ul>" + @model.errors.collect{|k,v| "<li>The #{k} #{v}</li>"}.to_s + "</ul>"
+page.visual_effect :highlight, "errors_for_#{@model.class.name.underscore}", :startcolor => "'#ff0000'", :endcolor => "'#aca2b6'"  
+{% endhighlight %}
+
+
+So, the errors just get collected and printed out to a <code>div</code> in the page. Let's go add this fancy <code>div</code>.
+
+h3. The View
+
+This part is pretty simple. You just need to open up your form partial, _posts/_form.html.erb_ and add this little view helper to the form:
+
+
+{% highlight ruby %}
+<%= error_div_for post %>
+{% endhighlight %}
+
+This does nothing but prints out a <code>div</code> with a specific ID to prepare for our RJS action, if it's needed. So let's go make the view helper.
+
+{% highlight ruby %}
+module ApplicationHelper
+
+  def error_div_for(model)
+      %{<div id="errors_for_#{model.class.name.underscore}"></div>}
+  end
+
+end
+{% endhighlight %}
+
+Now we can just call this simple view helper and pass in any model and it will dynamically build a div with the appropriate ID inside.
+
+And thats pretty much it. To go through it again, when the form is loaded, the error div will be placed in the page, waiting to be used. Once the form is submitted in the background, the controller's create action will attempt to save it. If the record is invalid with validation errors, then the universal validation_errror RJS template will be fired off and replace all the errors from the failed validation, into the div we placed in the page. Oh and of course a little red flash action to make sure the user sees the errors.
+
+ 
+

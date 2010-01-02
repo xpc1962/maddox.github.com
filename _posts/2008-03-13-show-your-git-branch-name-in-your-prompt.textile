@@ -1,0 +1,52 @@
+---
+layout: post
+title: Show Your GIT Branch Name In Your Prompt
+---
+
+h1. {{ page.title }}
+
+Typing <code>git branch</code> over and over to see what branch you are on sucks. Sure, you could argue that you should always KNOW what branch you're currently working on. And if you did, you would obviously not be a git user.
+
+Bouncing around branches can be pretty common, and I know I've messed some things up pretty bad not knowing what branch I was on. 
+
+So set up your shell to always put the name of the current branch into your prompt.
+
+!http://img.skitch.com/20080313-1qjnda6nm9reb4sgkii4qy3bcf.jpg!
+
+{% highlight bash %}
+function parse_git_branch {
+  git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/'
+}
+
+function proml {
+  local        BLUE="\[\033[0;34m\]"
+  local         RED="\[\033[0;31m\]"
+  local   LIGHT_RED="\[\033[1;31m\]"
+  local       GREEN="\[\033[0;32m\]"
+  local LIGHT_GREEN="\[\033[1;32m\]"
+  local       WHITE="\[\033[1;37m\]"
+  local  LIGHT_GRAY="\[\033[0;37m\]"
+  case $TERM in
+    xterm*)
+    TITLEBAR='\[\033]0;\u@\h:\w\007\]'
+    ;;
+    *)
+    TITLEBAR=""
+    ;;
+  esac
+
+PS1="${TITLEBAR}\
+$BLUE[$RED\$(date +%H:%M)$BLUE]\
+$BLUE[$RED\u@\h:\w$GREEN\$(parse_git_branch)$BLUE]\
+$GREEN\$ "
+PS2='> '
+PS4='+ '
+}
+proml
+{% endhighlight %}
+
+"Pastie Link":http://pastie.caboo.se/pastes/165446
+
+Put this at the top of your .bash_profile and you'll be pimping your branch all over.
+
+Thanks to "@defunkt":http://ozmm.org for this.

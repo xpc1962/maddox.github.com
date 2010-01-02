@@ -1,0 +1,93 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="keywords" content="jon maddox richmond programmer ruby cocoa va" />
+  <meta name="description" content="Here lies Jon Maddox" />
+  <link rel="stylesheet" href="/stylesheets/styles.css" type="text/css"> 
+  <link rel="stylesheet" href="/stylesheets/syntax.css" type="text/css"> 
+  <title>Associated and Non Associated Resources</title>
+</head>
+
+<body id="post">
+<a href="http://github.com/maddox"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub" /></a>
+<div id="content">
+  <h1>Associated and Non Associated Resources</h1>
+<p><strong>Problem:</strong> Your site has resources that can exist alone as well as be associated to another resource. You want to stay <span class="caps">DRY</span> as well as keep your routing RESTful.</p>
+<p>I just came across this problem while working on a project, and its solution is a bit easier than you&#8217;d think. Thanks to Ruby being so dynamic, Rails provides a really easy way to accomplish this. I&#8217;ll give my use case as an example.</p>
+<p>So I&#8217;ve got a website I&#8217;m working on. It&#8217;s for a church. Part of the data model will include Events and Groups. Groups will <em>have_many</em> Events. Simple enough. Here&#8217;s the wrench, Events can exist on their own as well. So the &#8220;Church&#8221; can have Events, which would be an Event existing alone without an association to anything, and every Group in the church will <em>have_many</em> Events.</p>
+<p>We also want to use RESTful routes so that we can have routes like: /events, /events/1, /groups/1/events, /groups/4/events/32</p>
+<p>Ok, so lets get jammin&#8217; on the solution.</p>
+<p>Lets knock out the data model first. We want to keep this <span class="caps">DRY</span>, so we&#8217;ll use Single Table Inheritance to keep track of the Events. We&#8217;ll have Events and GroupEvents. GroupEvents will inherit from the parent Events:</p>
+<div class="highlight"><pre><span class="no">Class</span> <span class="no">GroupEvent</span> <span class="o">&lt;</span> <span class="no">Event</span>
+</pre>
+</div><p>This way Events.find(:all) will return regular Events as well as GroupEvents. We&#8217;ll add one extra attribute for GroupEvent, group_id, this allows a GroupEvent to <em>belong_to</em> a Group. Lets make our migrations:</p>
+<h2>Data Tables</h2>
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">CreateGroups</span> <span class="o">&lt;</span> <span class="no">ActiveRecord</span><span class="o">::</span><span class="no">Migration</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">up</span>
+    <span class="n">create_table</span> <span class="ss">:groups</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">column</span> <span class="ss">:name</span><span class="p">,</span> <span class="ss">:string</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">column</span> <span class="ss">:description</span><span class="p">,</span> <span class="ss">:text</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">down</span>
+    <span class="n">drop_table</span> <span class="ss">:groups</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+
+<span class="k">class</span> <span class="nc">CreateEvents</span> <span class="o">&lt;</span> <span class="no">ActiveRecord</span><span class="o">::</span><span class="no">Migration</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">up</span>
+    <span class="n">create_table</span> <span class="ss">:events</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">column</span> <span class="ss">:type</span><span class="p">,</span> <span class="ss">:string</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">column</span> <span class="ss">:title</span><span class="p">,</span> <span class="ss">:string</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">column</span> <span class="ss">:description</span><span class="p">,</span> <span class="ss">:text</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">column</span> <span class="ss">:date_on_</span><span class="p">,</span> <span class="ss">:datetime</span>
+
+      <span class="c1"># extra attribute for GroupEvent</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">column</span> <span class="ss">:group_id</span><span class="p">,</span> <span class="ss">:integer</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">down</span>
+    <span class="n">drop_table</span> <span class="ss">:events</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre>
+</div><p>If you&#8217;re unfamiliar with <span class="caps">STI</span>, the type column is there to keep track of what type of object the row is. We also added the group_id attribute for the GroupEvent.</p>
+<p>Ok, so our DB is set up. Lets get our association on&#8230; Start by creating a new model named GroupEvent:</p>
+<h2>Data Model</h2>
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">GroupEvent</span> <span class="o">&lt;</span> <span class="no">Event</span>
+  <span class="n">belongs_to</span> <span class="ss">:group</span>
+<span class="k">end</span>
+</pre>
+</div><p>GroupEvent inherits from Event. Since Event inherits from ActiveRecord::Base, our GroupEvent class is still an ActiveRecord. Its just extended a bit. We also added a <em>belongs_to</em> association to Group. So Group will <em>have_many</em> GroupEvents, not Events. Next up, the Group model&#8230;</p>
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">Group</span> <span class="o">&lt;</span> <span class="no">ActiveRecord</span><span class="o">::</span><span class="no">Base</span>
+  <span class="n">has_many</span> <span class="ss">:events</span><span class="p">,</span> <span class="ss">:class_name</span> <span class="o">=&gt;</span> <span class="s1">&#39;GroupEvent&#39;</span><span class="p">,</span> <span class="ss">:foreign_key</span> <span class="o">=&gt;</span> <span class="s1">&#39;group_id&#39;</span>
+<span class="k">end</span>
+</pre>
+</div><p>Here&#8217;s where we&#8217;re pulling a few Rails tricks. We&#8217;re using telling Group that it has many events, but GroupEvents, using group_id as a foreign key (remember when we added that?!). So now we&#8217;re able to use:</p>
+<div class="highlight"><pre><span class="vi">@group</span> <span class="o">=</span> <span class="no">Group</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="vi">@events</span> <span class="o">=</span> <span class="vi">@group</span><span class="o">.</span><span class="n">events</span>
+</pre>
+</div><p>Whoa, nice! We didn&#8217;t have to have a separate table just for GroupEvents, which means we dont have to manage 2 different models and their attributes if they get updated. We also don&#8217;t have to use syntax like <em>@group.group_events</em> which is a bit ugly if you ask me. Groups have events, lets obfuscate <span class="caps">HOW</span> it has them to the back, so in the implementation we&#8217;re just worried about events, not namespaced events, blegh.</p>
+<p>OK! <span class="caps">NICE</span>! So far so good. What about the routes? I want http://mychurch.com/events and http://mychurch.com/groups/2/events, not http://mychurch.com/groups/3/group_events.</p>
+<p>Lets dig into the routing&#8230;</p>
+<div class="highlight"><pre><span class="n">map</span><span class="o">.</span><span class="n">resources</span> <span class="ss">:events</span>
+
+<span class="n">map</span><span class="o">.</span><span class="n">resources</span> <span class="ss">:groups</span> <span class="k">do</span> <span class="o">|</span><span class="n">group</span><span class="o">|</span>
+  <span class="n">group</span><span class="o">.</span><span class="n">resources</span> <span class="ss">:events</span><span class="p">,</span> <span class="ss">:controller</span> <span class="o">=&gt;</span> <span class="s1">&#39;group_events&#39;</span><span class="p">,</span> <span class="ss">:name_prefix</span> <span class="o">=&gt;</span> <span class="s1">&#39;group_&#39;</span>
+<span class="k">end</span>
+</pre>
+</div><p>First things first, we add a resource for Event. Next, since we want nice pretty nested routing, we nest GroupEvent into Group. Here&#8217;s some more configuration (<span class="caps">EEP</span>! yes yes, our requirements are outside of a convention, <span class="caps">BUT</span> <span class="caps">NOT</span> BY <span class="caps">MUCH</span>!). We want to define the route to use &#8216;events&#8217; in the actual <span class="caps">URI</span>, but we don&#8217;t want to stomp all over our previously declared resource, events. Our generated named routes will clash, we can&#8217;t have 2 events_path methods. So we add a :name_prefix option. This basically appends &#8216;group_&#8217; to every little route helper we have. So event_path in the Group context becomes, group_event_path. The tricky one is new_event_path turns to group_new_event_path, so its not AS pretty, but good enough :)</p>
+<p>Next we know our @group.events are going to be very different from our @events, so we need a GroupEventController. In order to properly map this, we use the :controller option. Without it, the routing will use EventController (those darn conventions&#8230;), and that would just process our logic for normal Events, not our scoped Group events.</p>
+<p>So there ya have it. Around 10 lines of code and we have our domain model nice and dry, and our routes very logical!</p>
+  <div id="footer">
+    <a href="/">&laquo; Return Home</a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+---
+layout: post
+title: Spec Out Your Cookies with Rspec
+---
+
+h1. {{ page.title }}
+
+Here's something that got me this weekend and I couldn't find much info on it anywhere. So like my Internet taught me, I'm sharing.
+
+<code>links_controller.rb</code>
+
+{% highlight ruby %}
+cookies[:phone] = params[:phone]
+{% endhighlight %}
+
+<code>links_controller_spec.rb</code>
+
+{% highlight ruby %}
+it "should save the phone number in a cookie" do
+  @my_cookies = mock('cookies')
+  @my_cookies.stub!(:[]=)
+  controller.stub!(:cookies).and_return(@my_cookies)
+
+  @my_cookies.should_receive(:[]=).with(:phone, '804-755-7555')
+
+  do_post
+end
+{% endhighlight %}
+
+Here I'm making the expectation that a cookie will be set with the key of 'phone' and a value of a passed in parameter. 
+My <code>do_post</code> method takes care of the post and passes in the parameter <code>:phone => '804-755-7555'</code>.

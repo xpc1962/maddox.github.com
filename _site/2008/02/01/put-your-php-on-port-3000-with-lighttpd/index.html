@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="keywords" content="jon maddox richmond programmer ruby cocoa va" />
+  <meta name="description" content="Here lies Jon Maddox" />
+  <link rel="stylesheet" href="/stylesheets/styles.css" type="text/css"> 
+  <link rel="stylesheet" href="/stylesheets/syntax.css" type="text/css"> 
+  <title>Put Your PHP on Port 3000 With Lighttpd</title>
+</head>
+
+<body id="post">
+<a href="http://github.com/maddox"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub" /></a>
+<div id="content">
+  <h1>Put Your <span class="caps">PHP</span> on Port 3000 With Lighttpd</h1>
+<p>While most of my work these days is in a Ruby and Rails environment, I still get my hands dirty with <span class="caps">PHP</span> every now and again.</p>
+<p>When working with web projects I practically require the ability to use absolute links for static content. Because of this, I usually have to host a <span class="caps">PHP</span> project under Apache and create a virtual name, oh and make a fake host entry in my hosts file. Blegh.</p>
+<p>This usually sucks even more when I throw in the fact that my project is under some kind of source control (which is usually always the case). So what is a frustrated developer to do?</p>
+<p>Well, the only reason this is annoying is because I don&#8217;t <strong>have</strong> to deal with it in my <code>script/server</code> world of Rails development. So I solved my litle <span class="caps">PHP</span> problem by borrowing from what I learned with Rails.</p>
+<p>Instead of developing <span class="caps">PHP</span> apps under Apache, I installed Lighttpd and fire off an instance whenever I need to do work on the app. Very simply I added a lighty config file under <code>APP_ROOT_/config</code> and when I want to work on my <span class="caps">PHP</span> app, I just start lighty. Booom. Now I have my app running at localhost:3000. Just like my Rails apps, so my fancy bookmark in my bookmark bar works for both my <span class="caps">PHP</span> and Rails projects. Now that <span class="caps">DRY</span>!</p>
+<p>So, how do you get it going like this? First off, all of these instructions were done in OS X 10.5 Leopard, so be warned.</p>
+<h3>Roll Your <span class="caps">PHP</span></h3>
+<p>You need to roll your own <span class="caps">PHP</span> in order to get support for php-cgi. Do this:</p>
+<div class="highlight"><pre>mkdir src
+<span class="nb">cd </span>src
+wget http://us.php.net/distributions/php-5.2.5.tar.gz
+tar xfz php-5.2.5.tar.gz
+<span class="nb">cd </span>php-5.2.5
+./configure --enable-fastcgi --enable-discard-path 
+  --enable-force-redirect --with-zlib --with-xml 
+  --with-mysql<span class="o">=</span>/usr/local/mysql
+  --prefix<span class="o">=</span>/usr/local/php5-fcgi 
+  --disable-cli --enable-memory-limit 
+  --with-layout<span class="o">=</span>GNU --with-regex<span class="o">=</span>php
+ 
+make
+sudo make install
+</pre>
+</div><p>Pretty basic. Download, configure, make, and install <span class="caps">PHP</span>.</p>
+<p>Next, rename the php binary, use tab complete I think the <span class="caps">XXX</span> part is different per install(?)</p>
+<div class="highlight"><pre>sudo mv /usr/local/php-cgi/bin/php-cgi.XXX /usr/local/php-cgi/bin/php
+</pre>
+</div><h3>Lighttpd</h3>
+<p>Ok, I&#8217;m not a big fan of MacPorts, but I was having so much trouble getting Lighttpd installed on Leopard, that I had macports do it for me. So, go install macports first and:</p>
+<div class="highlight"><pre>sudo port -d selfupdate 
+sudo port install lighttpd
+</pre>
+</div><h3>All the Rest</h3>
+<p>Ok, now you need to fix a small little problem with MySql and your new <span class="caps">PHP</span>. The new <span class="caps">PHP</span> may not see your MySql stuff correctly, so do this:</p>
+<div class="highlight"><pre>sudo mkdir /usr/local/mysql/lib/mysql
+sudo cp /usr/local/mysql/lib/libmysqlclient.15.dylib /usr/local/mysql/lib/mysql/libmysqlclient.15.dylib
+</pre>
+</div><h3>Set Up Your App</h3>
+<p>Ok, you&#8217;re all set up. Now you just need to add a lighttpd config file to your app. Create APP_ROOT/config/lighty.conf with this:</p>
+<div class="highlight"><pre>server.port <span class="o">=</span> 3000
+
+<span class="c"># server.errorlog    = CWD + &quot;/log/lighttpd.error.log&quot;</span>
+<span class="c"># accesslog.filename = CWD + &quot;/log/lighttpd.access.log&quot;</span>
+
+server.modules <span class="o">=</span> <span class="o">(</span> <span class="s2">&quot;mod_rewrite&quot;</span>,
+                   <span class="s2">&quot;mod_access&quot;</span>,
+                   <span class="s2">&quot;mod_fastcgi&quot;</span>,
+                   <span class="s2">&quot;mod_userdir&quot;</span>,
+                   <span class="s2">&quot;mod_accesslog&quot;</span> <span class="o">)</span>
+
+
+<span class="c"># If no file is specified, what to look for?</span>
+index-file.names <span class="o">=</span> <span class="o">(</span> <span class="s2">&quot;index.html&quot;</span>, <span class="s2">&quot;index.php&quot;</span> <span class="o">)</span>
+
+<span class="c"># Run the server under the user-name &quot;www&quot; for security purposes</span>
+<span class="c"># To bind to port 80, the server must be called by root user, but we don&#39;t want</span>
+<span class="c"># the server to have free run of the box, so it runs as &quot;www&quot;</span>
+
+
+<span class="c"># Set up the appropriate MIME type mappings</span>
+mimetype.assign             <span class="o">=</span> <span class="o">(</span>
+  <span class="s2">&quot;.pdf&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/pdf&quot;</span>,
+  <span class="s2">&quot;.sig&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/pgp-signature&quot;</span>,
+  <span class="s2">&quot;.spl&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/futuresplash&quot;</span>,
+  <span class="s2">&quot;.class&quot;</span>        <span class="o">=</span>&gt;      <span class="s2">&quot;application/octet-stream&quot;</span>,
+  <span class="s2">&quot;.ps&quot;</span>           <span class="o">=</span>&gt;      <span class="s2">&quot;application/postscript&quot;</span>,
+  <span class="s2">&quot;.torrent&quot;</span>      <span class="o">=</span>&gt;      <span class="s2">&quot;application/x-bittorrent&quot;</span>,
+  <span class="s2">&quot;.dvi&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/x-dvi&quot;</span>,
+  <span class="s2">&quot;.gz&quot;</span>           <span class="o">=</span>&gt;      <span class="s2">&quot;application/x-gzip&quot;</span>,
+  <span class="s2">&quot;.pac&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/x-ns-proxy-autoconfig&quot;</span>,
+  <span class="s2">&quot;.swf&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/x-shockwave-flash&quot;</span>,
+  <span class="s2">&quot;.tar.gz&quot;</span>       <span class="o">=</span>&gt;      <span class="s2">&quot;application/x-tgz&quot;</span>,
+  <span class="s2">&quot;.tgz&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/x-tgz&quot;</span>,
+  <span class="s2">&quot;.tar&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/x-tar&quot;</span>,
+  <span class="s2">&quot;.zip&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/zip&quot;</span>,
+  <span class="s2">&quot;.mp3&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;audio/mpeg&quot;</span>,
+  <span class="s2">&quot;.m3u&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;audio/x-mpegurl&quot;</span>,
+  <span class="s2">&quot;.wma&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;audio/x-ms-wma&quot;</span>,
+  <span class="s2">&quot;.wax&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;audio/x-ms-wax&quot;</span>,
+  <span class="s2">&quot;.ogg&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/ogg&quot;</span>,
+  <span class="s2">&quot;.wav&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;audio/x-wav&quot;</span>,
+  <span class="s2">&quot;.gif&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;image/gif&quot;</span>,
+  <span class="s2">&quot;.jpg&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;image/jpeg&quot;</span>,
+  <span class="s2">&quot;.jpeg&quot;</span>         <span class="o">=</span>&gt;      <span class="s2">&quot;image/jpeg&quot;</span>,
+  <span class="s2">&quot;.png&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;image/png&quot;</span>,
+  <span class="s2">&quot;.xbm&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;image/x-xbitmap&quot;</span>,
+  <span class="s2">&quot;.xpm&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;image/x-xpixmap&quot;</span>,
+  <span class="s2">&quot;.xwd&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;image/x-xwindowdump&quot;</span>,
+  <span class="s2">&quot;.css&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;text/css&quot;</span>,
+  <span class="s2">&quot;.html&quot;</span>         <span class="o">=</span>&gt;      <span class="s2">&quot;text/html&quot;</span>,
+  <span class="s2">&quot;.htm&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;text/html&quot;</span>,
+  <span class="s2">&quot;.js&quot;</span>           <span class="o">=</span>&gt;      <span class="s2">&quot;text/javascript&quot;</span>,
+  <span class="s2">&quot;.asc&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;text/plain&quot;</span>,
+  <span class="s2">&quot;.c&quot;</span>            <span class="o">=</span>&gt;      <span class="s2">&quot;text/plain&quot;</span>,
+  <span class="s2">&quot;.cpp&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;text/plain&quot;</span>,
+  <span class="s2">&quot;.log&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;text/plain&quot;</span>,
+  <span class="s2">&quot;.conf&quot;</span>         <span class="o">=</span>&gt;      <span class="s2">&quot;text/plain&quot;</span>,
+  <span class="s2">&quot;.text&quot;</span>         <span class="o">=</span>&gt;      <span class="s2">&quot;text/plain&quot;</span>,
+  <span class="s2">&quot;.txt&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;text/plain&quot;</span>,
+  <span class="s2">&quot;.dtd&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;text/xml&quot;</span>,
+  <span class="s2">&quot;.xml&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;text/xml&quot;</span>,
+  <span class="s2">&quot;.mpeg&quot;</span>         <span class="o">=</span>&gt;      <span class="s2">&quot;video/mpeg&quot;</span>,
+  <span class="s2">&quot;.mpg&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;video/mpeg&quot;</span>,
+  <span class="s2">&quot;.mov&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;video/quicktime&quot;</span>,
+  <span class="s2">&quot;.qt&quot;</span>           <span class="o">=</span>&gt;      <span class="s2">&quot;video/quicktime&quot;</span>,
+  <span class="s2">&quot;.avi&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;video/x-msvideo&quot;</span>,
+  <span class="s2">&quot;.asf&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;video/x-ms-asf&quot;</span>,
+  <span class="s2">&quot;.asx&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;video/x-ms-asf&quot;</span>,
+  <span class="s2">&quot;.wmv&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;video/x-ms-wmv&quot;</span>,
+  <span class="s2">&quot;.bz2&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/x-bzip&quot;</span>,
+  <span class="s2">&quot;.tbz&quot;</span>          <span class="o">=</span>&gt;      <span class="s2">&quot;application/x-bzip-compressed-tar&quot;</span>,
+  <span class="s2">&quot;.tar.bz2&quot;</span>      <span class="o">=</span>&gt;      <span class="s2">&quot;application/x-bzip-compressed-tar&quot;</span>
+ <span class="o">)</span>
+
+
+server.document-root <span class="o">=</span> CWD
+
+fastcgi.server <span class="o">=</span> <span class="o">(</span> <span class="s2">&quot;.php&quot;</span> <span class="o">=</span>&gt; <span class="o">(</span><span class="s2">&quot;localhost&quot;</span> <span class="o">=</span>&gt; <span class="o">(</span>
+                     <span class="s2">&quot;bin-path&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;/usr/local/php5-fcgi/bin/php&quot;</span>, <span class="c"># path to php binary</span>
+                     <span class="s2">&quot;socket&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;/tmp/php.socket&quot;</span>
+                 <span class="o">)))</span>
+                 
+</pre>
+</div><p>Now at the root of your app run:</p>
+<div class="highlight"><pre>lighttpd -D -f config/lighty.conf
+</pre>
+</div><h3>Boom</h3>
+<p>Now you&#8217;re deving with port 3000. Plus, your app isn&#8217;t constantly available and just sitting there. When you need to work on it, fire it up, work, and shut&#8217;r down.</p>
+  <div id="footer">
+    <a href="/">&laquo; Return Home</a>
+  </div>
+</div>
+</body>
+</html>

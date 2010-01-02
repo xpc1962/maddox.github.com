@@ -1,0 +1,31 @@
+---
+layout: post
+title: Jeez People, Stop Fretting Over Installing RMagick
+---
+
+h1. {{ page.title }}
+
+Rmagick. It sucks, I know. We all hate it. But you have apps that depend on it and haven't changed that yet. So you need it installed for development. And you hate installing it.
+
+But really, its not that installing RMagick sucks, its installing ImageMagick that sucks. Its hard. But the only thing worse than hard, is stupid ass MacPorts. Which is ********.
+
+So all I hear is people complain over and over about having to install it. Meanwhile there has been a script to install ImageMagick and RMagick on OS X forever, but people just don't seem to know its there. 
+
+I tell people about it and they just ignore me and then complain about installing RMagick to me later on!! WTF?!
+
+So, I've had it. When you format or get a new computer go here: <del datetime="2009-01-22T07:54:59+00:00"><a href="http://rubyforge.org/frs/?group_id=12&release_id=21634">http://rubyforge.org/frs/?group_id=12&release_id=21634</a></del>
+
+<del datetime="2009-01-22T07:58:22+00:00">Download rm_install</del>
+
+That old script isn't maintained and never works. I've decided to post one myself on GitHub with the hope that people will not only use it, but make sure it never gets stale. Grab it here: <a href="http://www.github.com/maddox/magick-installer"> http://www.github.com/maddox/magick-installer </a>
+
+
+Now, once its downloaded. Do this:
+
+{% highlight bash %}
+sudo ./magick-installer.sh
+{% endhighlight %}
+
+
+and let it run forever. Done. Pretty easy right? There. PLEASE USE IT. Its a fantastic script that works really well. Its not hard to install ImageMagick anymore! Dance!
+

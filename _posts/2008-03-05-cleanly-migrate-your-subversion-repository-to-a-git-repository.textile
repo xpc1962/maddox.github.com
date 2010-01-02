@@ -1,0 +1,39 @@
+---
+layout: post
+title: Cleanly Migrate Your Subversion Repository To a GIT Repository
+---
+
+h1. {{ page.title }}
+
+So you're ready to ride the GIT train eh? But what about all those projects in your subversion repository? Sure you could just use <code>git-svn</code> but what you really want is to cleanly move that repository and all its history to a nice new GIT repository.
+
+Luckily it's not that hard. For this example I'm going to use *my_blog* as the application name you're porting to a GIT repository. We're basically going to just initialize a new GIT repository, point it at your SVN repository, and suck in your code and history while remapping the users to GIT users. We'll then just clone THAT repository to have a clean GIT repository free of SVN clutter.
+
+The first thing we need to do is create a _users_ file that maps all your SVN users to your GIT users. Just make a file on your Desktop named 'users.txt'. Map the users using this format:
+
+{% highlight text %}
+jmaddox = Jon Maddox <jon@gmail.com>
+bigpappa = Brian Biggs <bigpappa@gmail.com>
+{% endhighlight %}
+
+Simple. Now here are the commands you'll run. I'll explain them below.
+
+{% highlight bash %}
+mkdir my_blog_tmp
+cd my_blog_tmp
+git-svn init http://code.yoursite.net/my_blog/trunk/ --no-metadata
+git config svn.authorsfile ~/Desktop/users.txt
+git-svn fetch
+{% endhighlight %}
+
+The first two are self explanatory, we're making a new directory for the temporary repository. The second command initializes the directory as a git-svn hybrid thing and points the origin at your SVN repository. The flag, <code>--no-metadata</code>, tells GIT to leave all the SVN details behind (not the commit log). The fourth command tells GIT to remap all the SVN users to GIT users when it sucks down the source and history. The last command actually does the fetching.
+
+Ok, so now after a few LONG minutes, your source is all there. Do a <code>git log</code> to see that your users have been mapped. Sweet!
+
+Now you just have one last step. You need to clone this repository. Why do we do this? When doing a normal <code>git clone</code> it will take everything we want from the temporary repository, while leaving behind all the SVN cruft that was there to support the <code>git-svn</code> stuff.
+
+{% highlight bash %}
+git clone my_blog_tmp my_blog
+{% endhighlight %}
+
+Boom! You're done. Now you have a super clean GIT repository all ready to use.

@@ -1,0 +1,169 @@
+---
+layout: post
+title: Put Your PHP on Port 3000 With Lighttpd
+---
+
+h1. {{ page.title }}
+
+While most of my work these days is in a Ruby and Rails environment, I still get my hands dirty with PHP every now and again. 
+
+When working with web projects I practically require the ability to use absolute links for static content. Because of this, I usually have to host a PHP project under Apache and create a virtual name, oh and make a fake host entry in my hosts file. Blegh. 
+
+This usually sucks even more when I throw in the fact that my project is under some kind of source control (which is usually always the case). So what is a frustrated developer to do?
+
+Well, the only reason this is annoying is because I don't *have* to deal with it in my <code>script/server</code> world of Rails development. So I solved my litle PHP problem by borrowing from what I learned with Rails.
+
+Instead of developing PHP apps under Apache, I installed Lighttpd and fire off an instance whenever I need to do work on the app. Very simply I added a lighty config file under <code>APP_ROOT_/config</code> and when I want to work on my PHP app, I just start lighty. Booom. Now I have my app running at localhost:3000. Just like my Rails apps, so my fancy bookmark in my bookmark bar works for both my PHP and Rails projects. Now that DRY!
+
+So, how do you get it going like this? First off, all of these instructions were done in OS X 10.5 Leopard, so be warned.
+
+h3. Roll Your PHP
+
+You need to roll your own PHP in order to get support for php-cgi. Do this:
+
+{% highlight bash %}
+mkdir src
+cd src
+wget http://us.php.net/distributions/php-5.2.5.tar.gz
+tar xfz php-5.2.5.tar.gz
+cd php-5.2.5
+./configure --enable-fastcgi --enable-discard-path 
+  --enable-force-redirect --with-zlib --with-xml 
+  --with-mysql=/usr/local/mysql
+  --prefix=/usr/local/php5-fcgi 
+  --disable-cli --enable-memory-limit 
+  --with-layout=GNU --with-regex=php
+ 
+make
+sudo make install
+{% endhighlight %}
+
+Pretty basic. Download, configure, make, and install PHP. 
+
+Next, rename the php binary, use tab complete I think the XXX part is different per install(?)
+
+{% highlight bash %}
+sudo mv /usr/local/php-cgi/bin/php-cgi.XXX /usr/local/php-cgi/bin/php
+{% endhighlight %}
+
+
+h3. Lighttpd
+
+Ok, I'm not a big fan of MacPorts, but I was having so much trouble getting Lighttpd installed on Leopard, that I had macports do it for me. So, go install macports first and:
+
+{% highlight bash %}
+sudo port -d selfupdate 
+sudo port install lighttpd
+{% endhighlight %}
+
+
+h3. All the Rest
+
+Ok, now you need to fix a small little problem with MySql and your new PHP. The new PHP may not see your MySql stuff correctly, so do this:
+
+{% highlight bash %}
+sudo mkdir /usr/local/mysql/lib/mysql
+sudo cp /usr/local/mysql/lib/libmysqlclient.15.dylib /usr/local/mysql/lib/mysql/libmysqlclient.15.dylib
+{% endhighlight %}
+
+h3. Set Up Your App
+
+Ok, you're all set up. Now you just need to add a lighttpd config file to your app. Create APP_ROOT/config/lighty.conf with this:
+
+{% highlight bash %}
+
+server.port = 3000
+
+# server.errorlog    = CWD + "/log/lighttpd.error.log"
+# accesslog.filename = CWD + "/log/lighttpd.access.log"
+
+server.modules = ( "mod_rewrite",
+                   "mod_access",
+                   "mod_fastcgi",
+                   "mod_userdir",
+                   "mod_accesslog" )
+
+
+# If no file is specified, what to look for?
+index-file.names = ( "index.html", "index.php" )
+
+# Run the server under the user-name "www" for security purposes
+# To bind to port 80, the server must be called by root user, but we don't want
+# the server to have free run of the box, so it runs as "www"
+
+
+# Set up the appropriate MIME type mappings
+mimetype.assign             = (
+  ".pdf"          =>      "application/pdf",
+  ".sig"          =>      "application/pgp-signature",
+  ".spl"          =>      "application/futuresplash",
+  ".class"        =>      "application/octet-stream",
+  ".ps"           =>      "application/postscript",
+  ".torrent"      =>      "application/x-bittorrent",
+  ".dvi"          =>      "application/x-dvi",
+  ".gz"           =>      "application/x-gzip",
+  ".pac"          =>      "application/x-ns-proxy-autoconfig",
+  ".swf"          =>      "application/x-shockwave-flash",
+  ".tar.gz"       =>      "application/x-tgz",
+  ".tgz"          =>      "application/x-tgz",
+  ".tar"          =>      "application/x-tar",
+  ".zip"          =>      "application/zip",
+  ".mp3"          =>      "audio/mpeg",
+  ".m3u"          =>      "audio/x-mpegurl",
+  ".wma"          =>      "audio/x-ms-wma",
+  ".wax"          =>      "audio/x-ms-wax",
+  ".ogg"          =>      "application/ogg",
+  ".wav"          =>      "audio/x-wav",
+  ".gif"          =>      "image/gif",
+  ".jpg"          =>      "image/jpeg",
+  ".jpeg"         =>      "image/jpeg",
+  ".png"          =>      "image/png",
+  ".xbm"          =>      "image/x-xbitmap",
+  ".xpm"          =>      "image/x-xpixmap",
+  ".xwd"          =>      "image/x-xwindowdump",
+  ".css"          =>      "text/css",
+  ".html"         =>      "text/html",
+  ".htm"          =>      "text/html",
+  ".js"           =>      "text/javascript",
+  ".asc"          =>      "text/plain",
+  ".c"            =>      "text/plain",
+  ".cpp"          =>      "text/plain",
+  ".log"          =>      "text/plain",
+  ".conf"         =>      "text/plain",
+  ".text"         =>      "text/plain",
+  ".txt"          =>      "text/plain",
+  ".dtd"          =>      "text/xml",
+  ".xml"          =>      "text/xml",
+  ".mpeg"         =>      "video/mpeg",
+  ".mpg"          =>      "video/mpeg",
+  ".mov"          =>      "video/quicktime",
+  ".qt"           =>      "video/quicktime",
+  ".avi"          =>      "video/x-msvideo",
+  ".asf"          =>      "video/x-ms-asf",
+  ".asx"          =>      "video/x-ms-asf",
+  ".wmv"          =>      "video/x-ms-wmv",
+  ".bz2"          =>      "application/x-bzip",
+  ".tbz"          =>      "application/x-bzip-compressed-tar",
+  ".tar.bz2"      =>      "application/x-bzip-compressed-tar"
+ )
+
+
+server.document-root = CWD
+
+fastcgi.server = ( ".php" => ("localhost" => (
+                     "bin-path" => "/usr/local/php5-fcgi/bin/php", # path to php binary
+                     "socket" => "/tmp/php.socket"
+                 )))
+                 
+{% endhighlight %}
+
+Now at the root of your app run:
+
+{% highlight bash %}
+lighttpd -D -f config/lighty.conf
+{% endhighlight %}
+
+h3. Boom
+
+Now you're deving with port 3000. Plus, your app isn't constantly available and just sitting there. When you need to work on it, fire it up, work, and shut'r down.
+

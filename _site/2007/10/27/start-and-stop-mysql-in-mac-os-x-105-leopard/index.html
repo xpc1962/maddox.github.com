@@ -1,0 +1,37 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="keywords" content="jon maddox richmond programmer ruby cocoa va" />
+  <meta name="description" content="Here lies Jon Maddox" />
+  <link rel="stylesheet" href="/stylesheets/styles.css" type="text/css"> 
+  <link rel="stylesheet" href="/stylesheets/syntax.css" type="text/css"> 
+  <title>Start and Stop MySql in Mac Os X 10.5 Leopard</title>
+</head>
+
+<body id="post">
+<a href="http://github.com/maddox"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub" /></a>
+<div id="content">
+  <h1>Start and Stop MySql in Mac Os X 10.5 Leopard</h1>
+<p>Yay! Its finally here! The newest version of my favorite operating system. And it comes with 98% of my dev stack <span class="caps">ALREADY</span> installed! Yay! This is perfect.</p>
+<p>Wait&#8230; ok, no MySql. Thats ok, I&#8217;ll just install it&#8230;Wait&#8230; why isn&#8217;t it running&#8230;why isn&#8217;t this stupid preference panel turning it on! <span class="caps">ARGHHH</span>!</p>
+<p>Ok, that may have just happened to you, and you dramatically hit the Google looking for answers. So answers I give you.</p>
+<p>If you want to start MySql in Leopard, you need to call the startup item directly from the command line:</p>
+<div class="highlight"><pre>sudo /Library/StartupItems/MySQLCOM/MySQLCOM start
+</pre>
+</div><p>And to stop it:</p>
+<div class="highlight"><pre>sudo /Library/StartupItems/MySQLCOM/MySQLCOM stop
+</pre>
+</div><p>Not so bad. But long&#8230; So make an alias in your <em>.bash_profile</em></p>
+<div class="highlight"><pre><span class="nb">alias </span><span class="nv">start_mysql</span><span class="o">=</span><span class="s2">&quot;/Library/StartupItems/MySQLCOM/MySQLCOM start&quot;</span>
+<span class="nb">alias </span><span class="nv">stop_mysql</span><span class="o">=</span><span class="s2">&quot;/Library/StartupItems/MySQLCOM/MySQLCOM stop&quot;</span>
+</pre>
+</div><p>Happier? Relaxed? Good.</p>
+  <div id="footer">
+    <a href="/">&laquo; Return Home</a>
+  </div>
+</div>
+</body>
+</html>

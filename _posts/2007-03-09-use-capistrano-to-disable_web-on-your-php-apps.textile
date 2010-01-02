@@ -1,0 +1,64 @@
+---
+layout: post
+title: Use Capistrano to disable_web On Your PHP Apps
+---
+
+h1. {{ page.title }}
+
+Just like using Capistrano to deploy my Rails apps made my PHP apps jealous, being able to disable the entire app with a single command did too.
+
+Using a simple _cap disable_web_ command allows my Rails apps to be completely disabled while I perform maintenance on the site without having to worry about users accessing it. Being able to suspend the site with a single command is *wonderful*, trust me.
+
+Well I want to do this with my PHP apps too. Here's how I did it.
+
+First create a generic page that you want your users to see when your site is disabled and name it _maintenance.html_. Then throw it into your _/config_ directory.
+
+
+h3. Cap Tasks
+
+Next, write a _disable_web_ task for Capistrano.
+
+{% highlight ruby %}
+desc "This will disable the application and show a warning screen"
+task :disable_web do
+  run "cp #{current_path}/config/maintenance.html #{current_path}/maintenance.html"
+end
+{% endhighlight %}
+
+
+This simple one liner will copy the maintenance.html file into the root of your application. Now lets write a task to re-enable the application.
+
+{% highlight ruby %}
+desc "This will enable the application and remove the warning screen"
+task :enable_web do
+  run "rm #{current_path}/maintenance.html"
+end
+{% endhighlight %}
+
+This will simply delete the maintenance file.
+
+Ok, so, basically, when you run _cap disable_web_, Capistrano will move your maintenance file into the root of your app, and _enable_web_ will delete it. So far this does nothing to disable your PHP application.
+
+h3. mod_rewrite Magic
+
+The trick to this is using mod_rewrite to look for your maintenance file. If it's at the root of your application, then all requests will be directed to it. Otherwise the application works as normal.
+
+{% highlight bash %}
+RewriteEngine On
+
+# Check for maintenance file and redirect all requests
+RewriteCond %{DOCUMENT_ROOT}/maintenance.html -f
+RewriteCond %{SCRIPT_FILENAME} !maintenance.html
+RewriteRule ^.*(\.html|\.php)$ /maintenance.html [L]
+{% endhighlight %}
+
+This will look for any requests of .html and .php files. All requests that fit that condition will pointed to the maintenance.html page if it exists at the root of the application.
+
+Huzzah! You've now got a "we're fixin' stuff" page. *And you can go from this:*
+
+!(centered)http://img.skitch.com/20100102-8iefy1eautujt11jc9c9frfcb8.jpg!
+
+*To this:*
+
+!(centered)http://img.skitch.com/20100102-mw61w28djwhrrxn96qj8ais24e.jpg!
+

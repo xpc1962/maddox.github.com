@@ -1,0 +1,20 @@
+---
+layout: post
+title: Flush your DNS Cache in Leopard
+---
+
+h1. {{ page.title }}
+
+As a web dev, you may spend some time messing with DNS and overriding it. Though, it can get annoying when you can't get things back to the way that mere mortals see things on the internet.
+
+<code>lookupd -flushcache</code> was a big tool in my arsenal in Tiger. But Leopard put a rightful end to <code>lookupd</code>, but left us without our known way of flushing the cache.
+
+For the last couple of weeks its been pretty annoying, but I'm here to bring you, the *NEW* way to flush dns cache for OS X users!!! Holy crap this is exciting.
+
+So it's as simple as this:
+
+{% highlight bash %}
+dscacheutil -flushcache
+{% endhighlight %}
+
+There you have it.

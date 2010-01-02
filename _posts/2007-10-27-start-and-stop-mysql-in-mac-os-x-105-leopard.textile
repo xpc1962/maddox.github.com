@@ -1,0 +1,34 @@
+---
+layout: post
+title: Start and Stop MySql in Mac Os X 10.5 Leopard
+---
+
+h1. {{ page.title }}
+
+Yay! Its finally here! The newest version of my favorite operating system. And it comes with 98% of my dev stack ALREADY installed! Yay! This is perfect.
+
+Wait&#8230; ok, no MySql. Thats ok, I'll just install it&#8230;Wait&#8230; why isn't it running&#8230;why isn't this stupid preference panel turning it on! ARGHHH!
+
+Ok, that may have just happened to you, and you dramatically hit the Google looking for answers. So answers I give you.
+
+If you want to start MySql in Leopard, you need to call the startup item directly from the command line:
+
+{% highlight bash %}
+sudo /Library/StartupItems/MySQLCOM/MySQLCOM start
+{% endhighlight %}
+
+And to stop it:
+
+{% highlight bash %}
+sudo /Library/StartupItems/MySQLCOM/MySQLCOM stop
+{% endhighlight %}
+
+Not so bad. But long... So make an alias in your _.bash_profile_
+
+{% highlight bash %}
+alias start_mysql="/Library/StartupItems/MySQLCOM/MySQLCOM start"
+alias stop_mysql="/Library/StartupItems/MySQLCOM/MySQLCOM stop"
+{% endhighlight %}
+
+Happier? Relaxed? Good.
+
