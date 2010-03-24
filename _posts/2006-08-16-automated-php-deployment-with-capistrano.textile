@@ -21,12 +21,12 @@ h3. Ok ok ok, Lets Get On With It
 
 So, we have a PHP app that we need to deploy to server X. It needs to be sucked out of its repository, its version symlinked to a doc_root, and then a shared directory symlinked into the site. This is a pretty common deployment scenario, so lets go with this.
 
-First, we need a Capistrano recipe. Currently, it can only be auto generated for a Rails app, so psst, "here it is":http://simplisticcomplexity.com/images/deploy.rb. Download this and create a directory at the root of your PHP app and name it _config_.
+First, we need a Capistrano recipe. Currently, it can only be auto generated for a Rails app, so psst, "here it is":http://maddox.s3.amazonaws.com/sites/deploy.rb. Download this and create a directory at the root of your PHP app and name it _config_.
 
 {% highlight bash %}
 mkdir config
 cd config
-wget http://simplisticcomplexity.com/images/deploy.rb
+wget http://maddox.s3.amazonaws.com/sites/deploy.rb
 {% endhighlight %}
 
 Capistrano wants its recipe to be in the _config_ directory, so do as it likes. Now lets open it up and make it work with us. Once again, a complete description of the Capistrano recipe file is bit out of scope for this little post, so please "read up":http://manuals.rubyonrails.com/read/book/17.
